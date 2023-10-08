@@ -1,82 +1,75 @@
-import Link from 'next/link'
+'use client'
 
-const Home = () => (
-	<main className='bg-gray-100 min-h-screen w-screen'>
-		<main className='max-w-screen-2xl m-auto bg-white'>
-			{/* NAVBAR */}
-			<nav className='bg-white p-2 flex justify-between'>
-				<Link href='/' className='font-bold text-gray-700 text-2xl'>
-					{' '}
-					OpenTable{' '}
-				</Link>
-				<div>
-					<div className='flex'>
-						<button className='bg-blue-400 text-white border p-1 px-4 rounded mr-3'>
-							Sign in
-						</button>
-						<button className='border p-1 px-4 rounded'>
-							Sign up
-						</button>
-					</div>
+import { useEffect, useState } from 'react'
+import { useRouter } from 'next/navigation'
+import Button from './components/ui/button'
+import { fetchRestaurants } from '@/service/restaurant'
+import useAsync from '@/hooks/use-async'
+import { TRestaurant } from '@/types/app/restaurant'
+import RestaurantCard from './components/restaurant/restaurant-card'
+import Header from './components/ui/header'
+import { TRestaurantResponse } from '@/types/response/restaurant'
+import { mapRestaurantToApp } from '@/types/map/restaurant'
+
+const Home = () => {
+	const [location, setLocation] = useState<string>('')
+	const {
+		data: restaurantsResponse,
+		error: restaurantsError,
+		run: runFetchRestaurants,
+	} = useAsync<TRestaurantResponse[]>(fetchRestaurants)
+	const [restaurants, setRestaurants] = useState<TRestaurant[]>()
+	const router = useRouter()
+
+	useEffect(() => {
+		runFetchRestaurants()
+		setRestaurants(
+			(restaurantsResponse ?? []).map((rr) => mapRestaurantToApp(rr))
+		)
+	}, [restaurantsResponse, runFetchRestaurants])
+
+	return (
+		<>
+			<Header className='py-10'>
+				<div className='flex flex-col items-center gap-5 w-fit mx-auto'>
+					<h2 className='text-white text-center font-semibold text-3xl'>
+						Find your table for any occasion
+					</h2>
+					<section className='flex gap-5 w-full'>
+						<input
+							type='text'
+							placeholder='Location or Restaurant'
+							className='rounded px-2 py-1 w-full'
+							onChange={(e: any) => setLocation(e.target.value)}
+						/>
+						<Button
+							variant='danger'
+							onClick={() => {
+								router.push(`/search/${location}`)
+							}}
+						>
+							{"Let's go"}
+						</Button>
+					</section>
 				</div>
-			</nav>
-			{/* NAVBAR */}
-			<main>
-				{/* HEADER */}
-				<div className='h-64 bg-gradient-to-r from-[#0f1f47] to-[#5f6984] p-2'>
-					<div className='text-center mt-10'>
-						<h1 className='text-white text-5xl font-bold mb-2'>
-							Find your table for any occasion
-						</h1>
-						{/* SEARCH BAR */}
-						<div className='text-left text-lg py-3 m-auto flex justify-center'>
-							<input
-								className='rounded  mr-3 p-2 w-[450px]'
-								type='text'
-								placeholder='State, city or town'
-							/>
-							<button className='rounded bg-red-600 px-9 py-2 text-white'>
-								{"Let's go"}
-							</button>
-						</div>
-						{/* SEARCH BAR */}
-					</div>
-				</div>
-				{/* HEADER */} {/* CARDS */}
-				<div className='py-3 px-36 mt-10 flex flex-wrap justify-center'>
-					{/* CARD */}
-					<Link href='/restaurant/x'>
-						<div className='w-64 h-72 m-3 rounded overflow-hidden border cursor-pointer'>
-							<img
-								src='https://resizer.otstatic.com/v2/photos/wide-huge/2/31852905.jpg'
-								alt=''
-								className='w-full h-36'
-							/>
-							<div className='p-1'>
-								<h3 className='font-bold text-2xl mb-2'>
-									Milestones Grill
-								</h3>
-								<div className='flex items-start'>
-									<div className='flex mb-2'>*****</div>
-									<p className='ml-2'>77 reviews</p>
-								</div>
-								<div className='flex text-reg font-light capitalize'>
-									<p className=' mr-3'>Mexican</p>
-									<p className='mr-3'>$$$$</p>
-									<p>Toronto</p>
-								</div>
-								<p className='text-sm mt-1 font-bold'>
-									Booked 3 times today
-								</p>
-							</div>
-						</div>
-					</Link>
-					{/* CARD */}
-				</div>
-				{/* CARDS */}
+			</Header>
+			<main className='py-10 px-20'>
+				<h2 className='text-xl text-center mb-20 font-semibold'>
+					Reserve a Restaurant Now
+				</h2>
+				{restaurants ? (
+					restaurants.map((restaurant) => (
+						<RestaurantCard
+							key={restaurant.slug}
+							restaurant={restaurant}
+						/>
+					))
+				) : (
+					<div className='text-center'>Loading...</div>
+				)}
 			</main>
-		</main>
-	</main>
-)
+		</>
+	)
+}
 
 export default Home
